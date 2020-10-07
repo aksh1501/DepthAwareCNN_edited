@@ -1,15 +1,45 @@
 #include <THC/THC.h>
 
-#include "depthavgpooling_cuda_kernel.h"
+int depthavgpooling_forward_cuda(THCudaTensor *input,
+           THCudaTensor *input_depth,
+           THCudaTensor *output,
+           THCudaTensor *depthweightcount,
+           int kW, int kH,
+           int dW, int dH,
+           int padW, int padH) ;
 
-extern THCState *state;
+int depthavgpooling_backward_input_cuda(
+           THCudaTensor *input,
+           THCudaTensor *input_depth,
+           THCudaTensor *depthweightcount,
+           THCudaTensor *gradOutput,
+           THCudaTensor *gradInput,
+           int kW, int kH,
+           int dW, int dH,
+           int padW, int padH) ;
+void AvePoolForward(cudaStream_t stream, const int count,
+    const float* const input_data, const float* const input_depth_data,const int channels,
+    const int height, const int width, const int pooled_height,
+    const int pooled_width, const int kernel_h, const int kernel_w,
+    const int stride_h, const int stride_w, const int pad_h, const int pad_w,
+    float* const top_data, float* const depth_weight_count);
+
+void AvePoolBackward(cudaStream_t stream, const int count, const float* const gradOutput,const float* const input_depth,const float* const depth_weight_count,
+    const int channels, const int height,
+    const int width, const int pooled_height, const int pooled_width,
+    const int kernel_h, const int kernel_w, const int stride_h,
+    const int stride_w, const int pad_h, const int pad_w,
+    float* const bottom_diff);
+
+
+extern THCState *state;                                                                     
 
 
 void shape_check(THCState *state,
   THCudaTensor *input, THCudaTensor *input_depth,THCudaTensor *depthweightcount, THCudaTensor *gradOutput,
   int kH, int kW, int dH, int dW, int padH, int padW) {
 
-  THArgCheck(kW > 0 && kH > 0, 5,
+  THArgCheck(kW > 0 && kH > 0, 5,                                                          
              "kernel size should be greater than zero, but got kH: %d kW: %d", kH, kW);
   THArgCheck(dW > 0 && dH > 0, 8,
              "stride should be greater than zero, but got dH: %d dW: %d", dH, dW);
@@ -28,7 +58,7 @@ void shape_check(THCState *state,
 //  THCUNN_argCheck(state, ndim == 3 || ndim == 4, 2, input,
 //                  "3D or 4D input tensor expected but got: %s");
 
-  THArgCheck(ndim == 3 || ndim == 4, 2,
+  THArgCheck(ndim == 3 || ndim == 4, 2,                                                        
              "3D or 4D input tensor expected but got: %d",
              ndim);
 //  THArgCheck(kW/2 >= padW && kH/2 >= padH, 2,
